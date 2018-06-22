@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import pandas as pd
 
-data_path = "D:/match/sim/data/"
+data_path = "D:/match/moj_sim/origindata/"
 TRAIN_PATH = data_path + 'train.csv'
 TEST_PATH = data_path + 'test.csv'
 QUESTION_PATH = data_path + 'question.csv'
@@ -66,24 +66,38 @@ print(char.head())
 print('---------- word -----------')
 print(word.head())
 
-print('Fit the corpus...')
-vec = TfidfVectorizer()
-vec.fit(corpus)
+# 分析 questions
+# 句子词数
+questions['wtokens'] = questions.words.apply(lambda x: len(x.split(' ')))
+questions.wtokens.value_counts()
+sum(questions.wtokens <= 10)  # 95% 词数小于10
+questions['ctokens'] = questions.chars.apply(lambda x: len(x.split(' ')))
+questions.ctokens.value_counts()
 
-print('Get texts...')
-train_texts = get_texts(TRAIN_PATH, QUESTION_PATH)
-test_texts = get_texts(TEST_PATH, QUESTION_PATH)
 
-print('Generate tfidf features...')
-tfidf_train = vec.transform(train_texts[:])
-tfidf_test = vec.transform(test_texts[:])
+# 相似扩展
+train0 = train.ix[train.label == 0]
+train1 = train.ix[train.label == 1]
 
-print('Train classifier...')
-clf = LogisticRegression()
-clf.fit(tfidf_train, train['label'][:])
+def tfidf():
+    print('Fit the corpus...')
+    vec = TfidfVectorizer()
+    vec.fit(corpus)
 
-print('Predict...')
-pred = clf.predict_proba(tfidf_test)
-make_submission(pred[:, 0])
+    print('Get texts...')
+    train_texts = get_texts(TRAIN_PATH, QUESTION_PATH)
+    test_texts = get_texts(TEST_PATH, QUESTION_PATH)
 
-print('Complete')
+    print('Generate tfidf features...')
+    tfidf_train = vec.transform(train_texts[:])
+    tfidf_test = vec.transform(test_texts[:])
+
+    print('Train classifier...')
+    clf = LogisticRegression()
+    clf.fit(tfidf_train, train['label'][:])
+
+    print('Predict...')
+    pred = clf.predict_proba(tfidf_test)
+    make_submission(pred[:, 0])
+
+    print('Complete')
