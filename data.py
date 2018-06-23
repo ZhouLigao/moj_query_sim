@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import pandas as pd
 
-data_path = "D:/match/sim/data/"
+data_path = "origindata/"
 TRAIN_PATH = data_path + 'train.csv'
 TEST_PATH = data_path + 'test.csv'
 QUESTION_PATH = data_path + 'question.csv'
@@ -66,24 +66,43 @@ print(char.head())
 print('---------- word -----------')
 print(word.head())
 
-print('Fit the corpus...')
-vec = TfidfVectorizer()
-vec.fit(corpus)
 
-print('Get texts...')
-train_texts = get_texts(TRAIN_PATH, QUESTION_PATH)
-test_texts = get_texts(TEST_PATH, QUESTION_PATH)
+train1 = train.ix[train.label==1]
 
-print('Generate tfidf features...')
-tfidf_train = vec.transform(train_texts[:])
-tfidf_test = vec.transform(test_texts[:])
+train_revert = train.copy(deep=True)
+train_revert.columns = ['label', 'q2', 'q1']
 
-print('Train classifier...')
-clf = LogisticRegression()
-clf.fit(tfidf_train, train['label'][:])
+train_symmetry = train.append(train_revert,ignore_index=True)
+ts0 = train_symmetry.ix[train_symmetry.label==0]
+ts1 = train_symmetry.ix[train_symmetry.label==1]
+ts1.q1.value_counts().describe([0.01,0.1,0.2,0.5,0.9,0.99])
+sum(ts1.q1.value_counts()<2)
 
-print('Predict...')
-pred = clf.predict_proba(tfidf_test)
-make_submission(pred[:, 0])
 
-print('Complete')
+
+
+
+
+
+def tdidf():
+    print('Fit the corpus...')
+    vec = TfidfVectorizer()
+    vec.fit(corpus)
+
+    print('Get texts...')
+    train_texts = get_texts(TRAIN_PATH, QUESTION_PATH)
+    test_texts = get_texts(TEST_PATH, QUESTION_PATH)
+
+    print('Generate tfidf features...')
+    tfidf_train = vec.transform(train_texts[:])
+    tfidf_test = vec.transform(test_texts[:])
+
+    print('Train classifier...')
+    clf = LogisticRegression()
+    clf.fit(tfidf_train, train['label'][:])
+
+    print('Predict...')
+    pred = clf.predict_proba(tfidf_test)
+    make_submission(pred[:, 0])
+
+    print('Complete')
